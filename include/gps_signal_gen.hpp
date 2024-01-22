@@ -3,29 +3,30 @@
 
 #include <array>
 
+#include "gps_common.hpp"
 #include "gps_lnav_data.hpp"
 
 
 namespace Gps {
 namespace Lnav {
 
-template<typename ScalarType = double>
-struct LnavState
+template<typename RealType = double>
+struct State
 {
-  uint8_t subframe; // 0-4
-  uint16_t bit; // 0-299
-  uint8_t code_cycle; // 0-19
-  ScalarType chip; // [0,1023)
-  ScalarType code_frequency;
-  ScalarType carrier_frequency; // intermediate + doppler
-  ScalarType carrier_phase; // radians
+  uint8_t subframe = 0; // 0-4
+  uint16_t bit = 0; // 0-299
+  uint8_t code_cycle = 0; // 0-19
+  RealType chip = 0; // [0,1023)
+  RealType code_frequency = CA_RATE;
+  RealType carrier_frequency = 0.0; // intermediate + doppler
+  RealType carrier_phase = 0.0; // radians
 };
 
 
-class SatelliteLnavInfo
+class SatelliteInfo
 {
 public:
-  SatelliteLnavInfo(const uint8_t prn);
+  SatelliteInfo(const uint8_t prn);
   
   DataFrame& Frame() { return frame_; }
   const std::array<bool,1023>& Code() const { return ca_code_; }
@@ -51,6 +52,7 @@ private:
 
 
 // function that takes two-buffer set of subframes
+//! this function assumes constant carrier frequency and code frequency
 template<typename QuantizedType, typename RealType = double>
 void GenSignalWithData(
               uint8_t& subframe,    // 0-4
@@ -59,16 +61,16 @@ void GenSignalWithData(
               RealType& chip,         // [0,1023)
               RealType& code_frequency,
               RealType& carrier_frequency, // intermediate + doppler
-              RealType& carrier_phase, // radians
-              SatelliteLnavInfo& sat_info,
-              std::complex<QuantizedType>* const sample_array, 
+              RealType& carrier_phase, // radians in [0,2*pi]
+              SatelliteInfo& sat_info,
+              std::complex<QuantizedType>* sample_array, 
               const std::size_t array_size,
               const RealType sample_frequency,
               const QuantizedType amplitude)
 {
-  assert(subframe <= 5);
-  assert(bit <= 300);
-  assert(code_cycle <= 20);
+  assert(subframe < 5);
+  assert(bit < 300);
+  assert(code_cycle < 20);
 
   RealType angular_frequency = carrier_frequency * TwoPi<RealType>;
   RealType prev_chip = -1.0;
@@ -94,8 +96,12 @@ void GenSignalWithData(
       }
     }
 
-		sample_array[i] = ( (sat_info.Code(static_cast<uint16_t>(current_chip)) ^ nav_data) ? amplitude : -amplitude )
-                      * std::exp( ComplexI<RealType> * ((angular_frequency * del_t) + carrier_phase) );
+		// sample_array[i] = ( (sat_info.Code(static_cast<uint16_t>(current_chip)) ^ nav_data) ? amplitude : -amplitude )
+    //                   * std::exp( ComplexI<RealType> * ((angular_frequency * del_t) + carrier_phase) );
+    sample_array[i] = amplitude * static_cast<std::complex<QuantizedType>>(
+                      ( (sat_info.Code(static_cast<uint16_t>(current_chip)) ^ nav_data) ? 1. : -1. )
+                      * std::exp( ComplexI<RealType> * ((angular_frequency * del_t) + carrier_phase) )
+                    );
     prev_chip = current_chip;
 	}
   RealType del_t = static_cast<RealType>(array_size) / sample_frequency;
@@ -104,16 +110,16 @@ void GenSignalWithData(
 }
 
 
-template<typename ScalarType>
+template<typename QuantizedType, typename RealType = double>
 void GenSignalWithData(
-              LnavState<ScalarType>& signal_state,
-              const SatelliteLnavInfo& sat_info,
-              std::complex<ScalarType>* const sample_array, 
+              State<RealType>& signal_state,
+              SatelliteInfo& sat_info,
+              std::complex<QuantizedType>* sample_array, 
               const std::size_t array_size,
-              const ScalarType sample_frequency,
-              const ScalarType amplitude)
+              const RealType sample_frequency,
+              const QuantizedType amplitude)
 {
-  GenSignalWithData(signal_state.subframe,
+  GenSignalWithData<QuantizedType,RealType>(signal_state.subframe,
                     signal_state.bit,
                     signal_state.code_cycle,
                     signal_state.chip,
