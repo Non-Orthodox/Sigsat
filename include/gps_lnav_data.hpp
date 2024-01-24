@@ -77,7 +77,7 @@ public:
   ~Subframe() {}
   Word& operator[](const uint8_t index);
   Word operator[](const uint8_t index) const;
-  bool Bit(const uint8_t index) const;
+  bool Bit(const uint16_t index) const;
 
   void Print() const;
 };

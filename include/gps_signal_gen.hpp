@@ -33,8 +33,8 @@ public:
   const std::array<bool,1023>& Code() const { return ca_code_; }
   bool Code(const uint16_t chip_i) const { return ca_code_[chip_i]; }
   
-  bool GetMessageBit(const uint8_t subframe_i, const uint8_t bit_i);
-  bool Information(const uint8_t subframe_i, const uint8_t bit_i, const uint16_t chip_i);
+  bool GetMessageBit(const uint8_t subframe_i, const uint16_t bit_i);
+  bool Information(const uint8_t subframe_i, const uint16_t bit_i, const uint16_t chip_i);
 
   void Initialize(uint8_t first_subframe);
 private:
@@ -55,7 +55,7 @@ private:
 // function that takes two-buffer set of subframes
 //! this function assumes constant carrier frequency and code frequency
 template<typename QuantizedType, typename RealType = double>
-void GenSignalWithData(
+bool GenSignalWithData(
               uint8_t& subframe,    // 0-4
               uint16_t& bit,        // 0-299
               uint8_t& code_cycle,  // 0-19
@@ -67,7 +67,8 @@ void GenSignalWithData(
               std::complex<QuantizedType>* sample_array, 
               const std::size_t array_size,
               const RealType sample_frequency,
-              const QuantizedType amplitude)
+              const QuantizedType amplitude,
+              const bool cycle_carryover)
 {
   assert(subframe < 5);
   assert(bit < 300);
@@ -75,8 +76,7 @@ void GenSignalWithData(
 
   RealType angular_frequency = carrier_frequency * TwoPi<RealType>;
 
-  //! for simulations that accout for relative dynamics (non-constant frequencies), prev_chip will need to be explicitly known
-  RealType prev_chip = (chip > (code_frequency / sample_frequency)) ? -1.0 : 1024.0;
+  RealType prev_chip = cycle_carryover ? 1024.0 : -1.0;
   bool nav_data = sat_info.GetMessageBit(subframe, bit);
 	for (uint64_t i = 0; i < array_size; i++) {
     RealType del_t = static_cast<RealType>(i) / sample_frequency;
@@ -96,6 +96,7 @@ void GenSignalWithData(
           }
         }
         nav_data = sat_info.GetMessageBit(subframe, bit);
+        std::cout << nav_data;
       }
     }
 
@@ -111,19 +112,22 @@ void GenSignalWithData(
   RealType del_t = static_cast<RealType>(array_size) / sample_frequency;
 	chip = fmod((del_t * code_frequency) + chip, 1023.0);
   carrier_phase = fmod((angular_frequency * del_t) + carrier_phase, TwoPi<RealType>);
+
+  return (prev_chip > chip) ? true : false;
 }
 
 
 template<typename QuantizedType, typename RealType = double>
-void GenSignalWithData(
+bool GenSignalWithData(
               State<RealType>& signal_state,
               SatelliteInfo& sat_info,
               std::complex<QuantizedType>* sample_array, 
               const std::size_t array_size,
               const RealType sample_frequency,
-              const QuantizedType amplitude)
+              const QuantizedType amplitude,
+              const bool cycle_carryover)
 {
-  GenSignalWithData<QuantizedType,RealType>(signal_state.subframe,
+  return GenSignalWithData<QuantizedType,RealType>(signal_state.subframe,
                     signal_state.bit,
                     signal_state.code_cycle,
                     signal_state.chip,
@@ -134,7 +138,8 @@ void GenSignalWithData(
                     sample_array,
                     array_size,
                     sample_frequency,
-                    amplitude);
+                    amplitude,
+                    cycle_carryover);
 }
 
 

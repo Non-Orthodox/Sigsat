@@ -56,14 +56,14 @@ uint8_t SatelliteInfo::GetSubframeIndex(const uint8_t subframe_num)
 }
 
 
-bool SatelliteInfo::GetMessageBit(const uint8_t subframe_i, const uint8_t bit_i)
+bool SatelliteInfo::GetMessageBit(const uint8_t subframe_i, const uint16_t bit_i)
 {
   uint8_t subframe_index = GetSubframeIndex(subframe_i);
   return parity_subframes_[subframe_index].Bit(bit_i);
 }
 
 
-bool SatelliteInfo::Information(const uint8_t subframe_i, const uint8_t bit_i, const uint16_t chip_i)
+bool SatelliteInfo::Information(const uint8_t subframe_i, const uint16_t bit_i, const uint16_t chip_i)
 {
   return GetMessageBit(subframe_i, bit_i) ^ ca_code_[chip_i];
 }

@@ -100,7 +100,7 @@ Word Subframe::operator[](const uint8_t index) const
   return words_[index];
 }
 
-bool Subframe::Bit(const uint8_t index) const
+bool Subframe::Bit(const uint16_t index) const
 {
   return words_[index / 30].Bit(index % 30); 
 }
