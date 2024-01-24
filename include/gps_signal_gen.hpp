@@ -2,6 +2,7 @@
 #define SATELLITE_CONSTELLATIONS_INCLUDE_GPS_SIGNAL_GEN
 
 #include <array>
+#include <iostream>
 
 #include "gps_common.hpp"
 #include "gps_lnav_data.hpp"
@@ -35,9 +36,9 @@ public:
   bool GetMessageBit(const uint8_t subframe_i, const uint8_t bit_i);
   bool Information(const uint8_t subframe_i, const uint8_t bit_i, const uint16_t chip_i);
 
+  void Initialize(uint8_t first_subframe);
 private:
   uint8_t GetSubframeIndex(const uint8_t subframe_num);
-  void Initialize(uint8_t first_subframe);
 
   uint8_t prn_;
 
@@ -73,7 +74,9 @@ void GenSignalWithData(
   assert(code_cycle < 20);
 
   RealType angular_frequency = carrier_frequency * TwoPi<RealType>;
-  RealType prev_chip = -1.0;
+
+  //! for simulations that accout for relative dynamics (non-constant frequencies), prev_chip will need to be explicitly known
+  RealType prev_chip = (chip > (code_frequency / sample_frequency)) ? -1.0 : 1024.0;
   bool nav_data = sat_info.GetMessageBit(subframe, bit);
 	for (uint64_t i = 0; i < array_size; i++) {
     RealType del_t = static_cast<RealType>(i) / sample_frequency;
@@ -104,6 +107,7 @@ void GenSignalWithData(
                     );
     prev_chip = current_chip;
 	}
+
   RealType del_t = static_cast<RealType>(array_size) / sample_frequency;
 	chip = fmod((del_t * code_frequency) + chip, 1023.0);
   carrier_phase = fmod((angular_frequency * del_t) + carrier_phase, TwoPi<RealType>);

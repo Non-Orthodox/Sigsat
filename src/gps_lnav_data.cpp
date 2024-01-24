@@ -137,6 +137,7 @@ void DataFrame::TimeIncrement()
 Subframe DataFrame::ParityFrame(uint8_t sf)
 {
   Subframe result = subframes_[sf];
+
   //                           1,3,5,6,7,9,10,14,15,16,17,18,21,22
   static uint8_t arr29 [14] = {0,2,4,5,6,8, 9,13,14,15,16,17,20,21};
   //                           3,5,6,8,9,10,11,13,15,19,22,24
@@ -203,15 +204,15 @@ void DataFrame::SetSubframe1()
   
   // Words 4,5,6 are reserved
 
-  subframes_[0][6].SegmentSet(16, clock_data_.T_GD, 0, 7);
+  subframes_[0][6].SegmentSet(16, T_GD(), 0, 7);
 
   subframes_[0][7].SegmentSet(0, clock_data_.IODC, 0, 7);
-  subframes_[0][7].SegmentSet(8, clock_data_.t_oc, 0, 15);
+  subframes_[0][7].SegmentSet(8, t_oc(), 0, 15);
 
-  subframes_[0][8].SegmentSet(0, clock_data_.a_f2, 0, 7);
-  subframes_[0][8].SegmentSet(8, clock_data_.a_f1, 0, 15);
+  subframes_[0][8].SegmentSet(0, a_f2(), 0, 7);
+  subframes_[0][8].SegmentSet(8, a_f1(), 0, 15);
 
-  subframes_[0][9].SegmentSet(0, clock_data_.a_f0, 0, 21);
+  subframes_[0][9].SegmentSet(0, a_f0(), 0, 21);
 }
 
 void DataFrame::SetSubframe2()
@@ -221,22 +222,25 @@ void DataFrame::SetSubframe2()
   subframes_[1][2].SegmentSet(0, ephemeris_.IODE, 0, 7);
   subframes_[1][2].SegmentSet(8, ephemeris_.C_rs, 0, 15);
 
-  subframes_[1][3].SegmentSet(0, ephemeris_.del_n, 0, 15);
-  subframes_[1][3].SegmentSet(16, ephemeris_.M_0, 24, 31);
+  subframes_[1][3].SegmentSet(0, del_n(), 0, 15);
+  int32_t M = M_0();
+  subframes_[1][3].SegmentSet(16, M, 24, 31);
 
-  subframes_[1][4].SegmentSet(0, ephemeris_.M_0, 0, 23);
+  subframes_[1][4].SegmentSet(0, M, 0, 23);
 
-  subframes_[1][5].SegmentSet(0, ephemeris_.C_uc, 0, 15);
-  subframes_[1][5].SegmentSet(16, ephemeris_.e, 24, 31);
+  subframes_[1][5].SegmentSet(0, C_uc(), 0, 15);
+  int32_t e_bin = e();
+  subframes_[1][5].SegmentSet(16, e_bin, 24, 31);
 
-  subframes_[1][6].SegmentSet(0, ephemeris_.e, 0, 23);
+  subframes_[1][6].SegmentSet(0, e_bin, 0, 23);
 
-  subframes_[1][7].SegmentSet(0, ephemeris_.C_us, 0, 15);
-  subframes_[1][7].SegmentSet(16, ephemeris_.sqrtA, 24, 31);
+  subframes_[1][7].SegmentSet(0, C_us(), 0, 15);
+  int32_t sqrtA_bin = sqrtA();
+  subframes_[1][7].SegmentSet(16, sqrtA_bin, 24, 31);
 
-  subframes_[1][8].SegmentSet(0, ephemeris_.sqrtA, 0, 23);
+  subframes_[1][8].SegmentSet(0, sqrtA_bin, 0, 23);
 
-  subframes_[1][9].SegmentSet(0, ephemeris_.t_oe, 0, 15);
+  subframes_[1][9].SegmentSet(0, t_oe(), 0, 15);
   subframes_[1][9].Set(16, fit_interval_flag_);
   subframes_[1][9].SegmentSet(17, AODO_, 0, 4);
 }
@@ -246,25 +250,28 @@ void DataFrame::SetSubframe3()
 {
   Preamble(2);
 
-  subframes_[2][2].SegmentSet(0, ephemeris_.C_ic, 0, 15);
-  subframes_[2][2].SegmentSet(16, ephemeris_.Omega_0, 24, 31);
+  subframes_[2][2].SegmentSet(0, C_ic(), 0, 15);
+  int32_t Omega0_bin = Omega_0();
+  subframes_[2][2].SegmentSet(16, Omega0_bin, 24, 31);
 
-  subframes_[2][3].SegmentSet(0, ephemeris_.Omega_0, 0, 23);
+  subframes_[2][3].SegmentSet(0, Omega0_bin, 0, 23);
 
-  subframes_[2][4].SegmentSet(0, ephemeris_.C_is, 0, 15);
-  subframes_[2][4].SegmentSet(16, ephemeris_.i_0, 24, 31);
+  subframes_[2][4].SegmentSet(0, C_is(), 0, 15);
+  int32_t i0_bin = i_0();
+  subframes_[2][4].SegmentSet(16, i0_bin, 24, 31);
 
-  subframes_[2][5].SegmentSet(0, ephemeris_.i_0, 0, 23);
+  subframes_[2][5].SegmentSet(0, i0_bin, 0, 23);
 
-  subframes_[2][6].SegmentSet(0, ephemeris_.C_rc, 0, 15);
-  subframes_[2][6].SegmentSet(16, ephemeris_.omega, 24, 31);
+  subframes_[2][6].SegmentSet(0, C_rc(), 0, 15);
+  int32_t omega_bin = omega();
+  subframes_[2][6].SegmentSet(16, omega_bin, 24, 31);
   
-  subframes_[2][7].SegmentSet(0, ephemeris_.omega, 0, 23);
+  subframes_[2][7].SegmentSet(0, omega_bin, 0, 23);
 
-  subframes_[2][8].SegmentSet(0, ephemeris_.Omega_dot, 0, 23);
+  subframes_[2][8].SegmentSet(0, Omega_dot(), 0, 23);
 
   subframes_[2][9].SegmentSet(0, ephemeris_.IODE, 0, 7);
-  subframes_[2][9].SegmentSet(8, ephemeris_.IDOT, 0, 13);
+  subframes_[2][9].SegmentSet(8, IDOT(), 0, 13);
 }
 
 void DataFrame::SetSubframe4()
@@ -330,6 +337,111 @@ void DataFrame::SetSubframe5()
     return;
   }
 
+}
+
+int8_t DataFrame::T_GD()
+{
+  return ParamToBinary(clock_data_.T_GD, ClockDataScaleFactors.T_GD);
+}
+
+uint16_t DataFrame::t_oc()
+{
+  return ParamToBinary(clock_data_.t_oc, ClockDataScaleFactors.t_oc);
+}
+
+int32_t DataFrame::a_f0()
+{
+  return ParamToBinary(clock_data_.a_f0, ClockDataScaleFactors.a_f0);
+}
+
+int16_t DataFrame::a_f1()
+{
+  return ParamToBinary(clock_data_.a_f1, ClockDataScaleFactors.a_f1);
+}
+
+int8_t DataFrame::a_f2()
+{
+  return ParamToBinary(clock_data_.a_f2, ClockDataScaleFactors.a_f2);
+}
+
+int16_t DataFrame::C_rs()
+{
+  return ParamToBinary(ephemeris_.C_rs, EphemerisScaleFactors.C_rs);
+}
+
+int16_t DataFrame::del_n()
+{
+  return ParamToBinary(ephemeris_.del_n, EphemerisScaleFactors.del_n);
+}
+
+int32_t DataFrame::M_0()
+{
+  return ParamToBinary(ephemeris_.M_0, EphemerisScaleFactors.M_0);
+}
+
+int16_t DataFrame::C_uc()
+{
+  return ParamToBinary(ephemeris_.C_uc, EphemerisScaleFactors.C_uc);
+}
+
+int32_t DataFrame::e()
+{
+  return ParamToBinary(ephemeris_.e, EphemerisScaleFactors.e);
+}
+
+int16_t DataFrame::C_us()
+{
+  return ParamToBinary(ephemeris_.C_us, EphemerisScaleFactors.C_us);
+}
+
+uint32_t DataFrame::sqrtA()
+{
+  return ParamToBinary(ephemeris_.sqrtA, EphemerisScaleFactors.sqrtA);
+}
+
+uint16_t DataFrame::t_oe()
+{
+  return ParamToBinary(ephemeris_.t_oe, EphemerisScaleFactors.t_oe);
+}
+
+int16_t DataFrame::C_ic()
+{
+  return ParamToBinary(ephemeris_.C_ic, EphemerisScaleFactors.C_ic);
+}
+
+int32_t DataFrame::Omega_0()
+{
+  return ParamToBinary(ephemeris_.Omega_0, EphemerisScaleFactors.Omega_0);
+}
+
+int16_t DataFrame::C_is()
+{
+  return ParamToBinary(ephemeris_.C_is, EphemerisScaleFactors.C_is);
+}
+
+int32_t DataFrame::i_0()
+{
+  return ParamToBinary(ephemeris_.i_0, EphemerisScaleFactors.i_0);
+}
+
+int16_t DataFrame::C_rc()
+{
+  return ParamToBinary(ephemeris_.C_rc, EphemerisScaleFactors.C_rc);
+}
+
+int32_t DataFrame::omega()
+{
+  return ParamToBinary(ephemeris_.omega, EphemerisScaleFactors.omega);
+}
+
+int32_t DataFrame::Omega_dot()
+{
+  return ParamToBinary(ephemeris_.Omega_dot, EphemerisScaleFactors.Omega_dot);
+}
+
+int16_t DataFrame::IDOT()
+{
+  return ParamToBinary(ephemeris_.IDOT, EphemerisScaleFactors.IDOT);
 }
 
 void DataFrame::RandomizeParams()

@@ -78,6 +78,15 @@ struct Ephemeris
   constexpr static double WGS84_EQUAT_RADIUS = 6378137.0;
 };
 
+constexpr ClockData ClockDataScaleFactors =
+{
+  std::pow(2.0,-31),
+  16,
+  std::pow(2.0,-31),
+  std::pow(2.0,-43),
+  std::pow(2.0,-55),
+  1
+};
 
 constexpr ClockData ClockDataLowerLimits = 
 {
@@ -97,6 +106,27 @@ constexpr ClockData ClockDataUpperLimits =
   (std::pow(2.0,15) - 1.0) * std::pow(2.0,-43),
   127 * std::pow(2.0,-55),
   1023
+};
+
+constexpr Ephemeris EphemerisScaleFactors =
+{
+  std::pow(2.0,-31),
+  std::pow(2.0,-43),
+  std::pow(2.0,-33),
+  std::pow(2.0,-19),
+  std::pow(2.0,-31),
+  std::pow(2.0,-31),
+  std::pow(2.0,-31),
+  std::pow(2.0,-43),
+  std::pow(2.0,-43),
+  std::pow(2.0,-29),
+  std::pow(2.0,-29),
+  std::pow(2.0,-5),
+  std::pow(2.0,-5),
+  std::pow(2.0,-29),
+  std::pow(2.0,-29),
+  16,
+  1
 };
 
 constexpr Ephemeris EphemerisLowerLimits = 

@@ -188,8 +188,8 @@ public:
 private:
   static std::normal_distribution<FloatType> normal_dist_;
 
-  std::enable_if<StoreParams,FloatType>::type corr_period_;
-  std::enable_if<StoreParams,FloatType>::type cn_ratio_;
+  typename std::enable_if<StoreParams,FloatType>::type corr_period_;
+  typename std::enable_if<StoreParams,FloatType>::type cn_ratio_;
 };
 
 

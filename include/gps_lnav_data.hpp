@@ -106,6 +106,42 @@ public:
   void SetTOW(uint32_t tow) { tow_ = tow; }
   void SetWeek(uint16_t week) { week_ = week; }
 
+  // Setting other data
+  void SetIntegrityFlag(const bool val) { integrity_status_flag_ = val; }
+  void SetAlertFlag(const bool val) { alert_flag_ = val; }
+  void SetSpoofFlag(const bool val) { anti_spoof_flag_ = val; }
+  void SetL2Flag(const uint8_t val) { l2_flag_ = val; }
+  void SetURA(const uint8_t val) { URA_ = val; }
+  void SetHealth(const uint8_t val) { health_ = val; }
+  void SetFitIntervalFlag(const bool val) { fit_interval_flag_ = val; }
+  void SetAODO(const bool val) { AODO_ = val; }
+
+  ClockData& ClockParams() { return clock_data_; }
+  Ephemeris& Ephemerides() { return ephemeris_; }
+
+  int8_t T_GD();
+  uint16_t t_oc();
+  int32_t a_f0();
+  int16_t a_f1();
+  int8_t a_f2();
+
+  int16_t C_rs();
+  int16_t del_n();
+  int32_t M_0();
+  int16_t C_uc();
+  int32_t e();
+  int16_t C_us();
+  uint32_t sqrtA();
+  uint16_t t_oe();
+  int16_t C_ic();
+  int32_t Omega_0();
+  int16_t C_is();
+  int32_t i_0();
+  int16_t C_rc();
+  int32_t omega();
+  int32_t Omega_dot(); // 24 bits
+  int16_t IDOT(); // 14 bits
+
   void RandomizeParams();
 
   void Print(uint8_t sf) const { subframes_[sf].Print(); }
@@ -117,10 +153,9 @@ private:
   
   ClockData clock_data_;
   Ephemeris ephemeris_;
-  uint32_t tow_;
+  uint32_t tow_; // beginning of next subframe
   uint16_t week_; // 10 bits
 
-  // TODO Make interface to set all of the below variables
   bool integrity_status_flag_ = false;
   bool alert_flag_ = false;
   bool anti_spoof_flag_ = false;

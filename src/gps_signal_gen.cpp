@@ -7,15 +7,25 @@ namespace Lnav {
 
 SatelliteInfo::SatelliteInfo(const uint8_t prn) : prn_{prn}
 {
-  Initialize(0);
+  // Initialize(0);
 }
 
 
+//TODO initialize parity frames
 void SatelliteInfo::Initialize(uint8_t first_subframe)
 {
   GenCA(&ca_code_,prn_);
+
   subframe_nums_[0] = first_subframe;
   subframe_nums_[1] = (first_subframe + 1) % 5;
+
+  frame_.SetSubframe(subframe_nums_[0]);
+  frame_.SetSubframe(subframe_nums_[1]);
+
+  parity_subframes_[0] = frame_.ParityFrame(subframe_nums_[0]);
+  parity_subframes_[1] = frame_.ParityFrame(subframe_nums_[1]);
+
+  parity_subframes_[0].Print();
 }
 
 
