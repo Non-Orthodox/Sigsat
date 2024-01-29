@@ -2,7 +2,6 @@
 #define SATELLITE_CONSTELLATIONS_INCLUDE_GPS_SIGNAL_GEN
 
 #include <array>
-#include <iostream>
 
 #include "gps_common.hpp"
 #include "gps_lnav_data.hpp"
@@ -47,7 +46,7 @@ private:
 
   Subframe parity_subframes_ [2];
   uint8_t subframe_nums_ [2];
-  //TODO maybe add index for latest subframe?
+  //TODO add index for latest subframe? (index of parity_subframes, not subframe index), this will make things more efficient
   //? perhaps make a new class for handling this circular container
 };
 
@@ -96,7 +95,6 @@ bool GenSignalWithData(
           }
         }
         nav_data = sat_info.GetMessageBit(subframe, bit);
-        std::cout << nav_data;
       }
     }
 
