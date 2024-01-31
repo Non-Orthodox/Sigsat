@@ -60,7 +60,6 @@ void ClockData::Randomize()
   a_f0 = distribution(internal::random_gen) * (ClockDataUpperLimits.a_f0 - ClockDataLowerLimits.a_f0) + ClockDataLowerLimits.a_f0;
   a_f1 = distribution(internal::random_gen) * (ClockDataUpperLimits.a_f1 - ClockDataLowerLimits.a_f1) + ClockDataLowerLimits.a_f1;
   a_f2 = distribution(internal::random_gen) * (ClockDataUpperLimits.a_f2 - ClockDataLowerLimits.a_f2) + ClockDataLowerLimits.a_f2;
-  IODC = 0; // TODO randomize IODC
 }
 
 
@@ -282,7 +281,27 @@ void Ephemeris::Randomize()
   C_ic = distribution(internal::random_gen) * (EphemerisUpperLimits.C_ic - EphemerisLowerLimits.C_ic) + EphemerisLowerLimits.C_ic;
   C_is = distribution(internal::random_gen) * (EphemerisUpperLimits.C_is - EphemerisLowerLimits.C_is) + EphemerisLowerLimits.C_is;
   t_oe = distribution(internal::random_gen) * (EphemerisUpperLimits.t_oe - EphemerisLowerLimits.t_oe) + EphemerisLowerLimits.t_oe;
-  IODE = 0; // TODO randomize IODE
+}
+
+void Ephemeris::Print() const
+{
+  std::cout << "M_0:       " << M_0 << '\n';
+  std::cout << "del_n:     " << del_n << '\n';
+  std::cout << "e:         " << e << '\n';
+  std::cout << "sqrtA:     " << sqrtA << '\n';
+  std::cout << "Omega_0:   " << Omega_0 << '\n';
+  std::cout << "i_0:       " << i_0 << '\n';
+  std::cout << "omega:     " << omega << '\n';
+  std::cout << "Omega_dot: " << Omega_dot << '\n';
+  std::cout << "IDOT:      " << IDOT << '\n';
+  std::cout << "C_uc:      " << C_uc << '\n';
+  std::cout << "C_us:      " << C_us << '\n';
+  std::cout << "C_rc:      " << C_rc << '\n';
+  std::cout << "C_rs:      " << C_rs << '\n';
+  std::cout << "C_ic:      " << C_ic << '\n';
+  std::cout << "C_is:      " << C_is << '\n';
+  std::cout << "t_oe:      " << t_oe << '\n';
+  std::cout << "IODE:      " << static_cast<int>(IODE) << '\n';
 }
 
 } // namespace gps

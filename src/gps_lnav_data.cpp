@@ -448,6 +448,10 @@ void DataFrame::RandomizeParams()
 {
   clock_data_.Randomize();
   ephemeris_.Randomize();
+  clock_data_.t_oc = ephemeris_.t_oe;
+
+  ephemeris_.IODE = 241;
+  clock_data_.IODC = ephemeris_.IODE;
 }
 
 

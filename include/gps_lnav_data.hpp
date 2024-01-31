@@ -160,14 +160,14 @@ private:
   bool alert_flag_ = false;
   bool anti_spoof_flag_ = false;
 
-  uint8_t l2_flag_ {0};
+  uint8_t l2_flag_ {2};
   uint8_t URA_ {0};
   uint8_t health_ {0};
 
-  bool fit_interval_flag_ {false};
+  bool fit_interval_flag_ {true};
   uint8_t AODO_ {0};
 
-  uint8_t page_ {0};
+  uint8_t page_ {1};
   bool D29_ {false};
   bool D30_ {false};
 };

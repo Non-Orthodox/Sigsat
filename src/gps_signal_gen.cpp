@@ -2,6 +2,7 @@
 #include "gps_common.hpp"
 #include "gps_signal_gen.hpp"
 
+
 namespace Gps {
 namespace Lnav {
 
@@ -25,7 +26,7 @@ void SatelliteInfo::Initialize(uint8_t first_subframe)
   parity_subframes_[0] = frame_.ParityFrame(subframe_nums_[0]);
   parity_subframes_[1] = frame_.ParityFrame(subframe_nums_[1]);
 
-  parity_subframes_[0].Print();
+  // parity_subframes_[0].Print();
 }
 
 

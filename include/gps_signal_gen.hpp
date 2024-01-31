@@ -2,6 +2,7 @@
 #define SATELLITE_CONSTELLATIONS_INCLUDE_GPS_SIGNAL_GEN
 
 #include <array>
+#include <vector>
 
 #include "gps_common.hpp"
 #include "gps_lnav_data.hpp"
@@ -138,6 +139,75 @@ bool GenSignalWithData(
                     sample_frequency,
                     amplitude,
                     cycle_carryover);
+}
+
+
+template<typename QuantizedType, typename RealType = double>
+std::vector<bool> GenBasebandSignalsWithData(
+              std::vector<State<RealType>>& signal_states,
+              std::vector<SatelliteInfo>& sat_info,
+              std::complex<QuantizedType>* sample_array, 
+              const std::size_t array_size,
+              const RealType sample_frequency,
+              const RealType amplitude,
+              const std::vector<bool> cycle_carryovers)
+{
+  // std::vector<RealType> angular_frequencies(signal_states.size());
+  std::vector<RealType> prev_chips(signal_states.size());
+  std::vector<bool> nav_data(signal_states.size());
+
+  for (std::size_t i = 0; i < signal_states.size(); i++) {
+    assert(signal_states[i].subframe < 5);
+    assert(signal_states[i].bit < 300);
+    assert(signal_states[i].code_cycle < 20);
+
+    // angular_frequencies[i] = signal_states[i].carrier_frequency * TwoPi<RealType>;
+    prev_chips[i] = cycle_carryovers[i] ? 1024.0 : -1.0;
+    nav_data[i] = sat_info[i].GetMessageBit(signal_states[i].subframe, signal_states[i].bit);
+  }
+
+  std::vector<RealType> current_chips(signal_states.size());
+  for (uint64_t k = 0; k < array_size; k++) {
+    RealType del_t = static_cast<RealType>(k) / sample_frequency;
+
+    // For each PRN
+    std::complex<RealType> sample = 0.0;
+    for (std::size_t i = 0; i < signal_states.size(); i++) {
+		  current_chips[i] = fmod((del_t * signal_states[i].code_frequency) + signal_states[i].chip, 1023.0);
+
+      // Update data indices if needed
+      if (prev_chips[i] > current_chips[i]) {
+        signal_states[i].code_cycle++;
+        if (signal_states[i].code_cycle == 20) {
+          signal_states[i].code_cycle = 0;
+          signal_states[i].bit++;
+          if (signal_states[i].bit == 300) {
+            signal_states[i].bit = 0;
+            signal_states[i].subframe++;
+            if (signal_states[i].subframe == 5) {
+              signal_states[i].subframe = 0;
+            }
+          }
+          nav_data[i] = sat_info[i].GetMessageBit(signal_states[i].subframe, signal_states[i].bit);
+        }
+      }
+
+      sample += amplitude * ( (sat_info[i].Code(static_cast<uint16_t>(current_chips[i])) ^ nav_data[i]) ? 1. : -1. );
+              // * std::exp( ComplexI<RealType> * ((angular_frequencies[i] * del_t) + signal_states[i].carrier_phase) );
+      prev_chips[i] = current_chips[i];
+    }
+    sample_array[k] = static_cast<std::complex<QuantizedType>>(sample);
+  }
+
+  RealType del_t = static_cast<RealType>(array_size) / sample_frequency;
+  std::vector<bool> next_carryovers(signal_states.size());
+
+  for (std::size_t i = 0; i < signal_states.size(); i++) {
+	  signal_states[i].chip = fmod((del_t * signal_states[i].code_frequency) + signal_states[i].chip, 1023.0);
+    next_carryovers[i] = (prev_chips[i] > signal_states[i].chip) ? true : false;
+    // signal_states[i].carrier_phase = fmod((angular_frequencies[i] * del_t) + signal_states[i].carrier_phase, TwoPi<RealType>);
+  }
+  return next_carryovers;
 }
 
 

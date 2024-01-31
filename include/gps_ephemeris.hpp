@@ -70,6 +70,8 @@ struct Ephemeris
   double RelTimeRateRate(const double gps_time) const;
 
   void Randomize();
+
+  void Print() const;
   
   constexpr static double J2 = 0.0010826262;
   constexpr static double RELETIVISTIC_F = -4.442807633e-10;
