@@ -18,20 +18,25 @@ uint32_t ParamToBinary(const double param, const double scale_factor)
   return static_cast<uint32_t>(quotient < 0 ? quotient - 0.5 : quotient + 0.5);
 }
 
-// TODO fix function? filled isn't used when it should be
-double ParamFromBinary(const uint32_t data, const double scale_factor, const uint8_t num_bits,
+
+double ParamFromBinary(uint32_t data, const double scale_factor, const uint8_t num_bits,
   const bool twos_comp)
 {
   assert((num_bits >= 1) && (num_bits <= 32));
+  assert(scale_factor > 0.0);
 
-  double val = 0;
-  if (twos_comp) {
-    uint32_t filled = ( bitVal(data, num_bits-1) ? data | (-((1 << num_bits) - 1)) : data ); // fill MSBs with ones if data is negative
-    val = (double) ((int32_t) data);
+  static const uint32_t one = 1; // just avoiding the differing default size of integer literals
+
+  if (num_bits != 32)
+    data &= ((one << num_bits) - 1); // sets all MSBs past (num_bits-1) position to zero
+  if (twos_comp && (bitVal<true>(data, num_bits-1))) {
+    uint32_t signed_bit = (one << (num_bits-1));
+    data &= (~signed_bit);
+    data = (signed_bit - data); // un-signs the integer
+    return -scale_factor * static_cast<double>(data);
   } else {
-    val = (double) data;
+    return scale_factor * static_cast<double>(data);
   }
-  return val * scale_factor;
 }
 
 
@@ -99,129 +104,130 @@ inline double Ephemeris::EfromTime(const double gps_time, const unsigned int ite
 void Ephemeris::P(const double gps_time, Eigen::Vector3d& pos) const
 {
   Eigen::Vector3d filler;
-  PVA(gps_time, pos, filler, filler, false, false);
+  CalcPVA<false,false>(gps_time, pos, filler, filler);
 }
 
 void Ephemeris::PV(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel) const
 {
   Eigen::Vector3d filler;
-  PVA(gps_time, pos, vel, filler, true, false);
+  CalcPVA<true,false>(gps_time, pos, vel, filler);
 }
 
 void Ephemeris::PVA(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel,
   Eigen::Vector3d& accel) const
 {
-  PVA(gps_time, pos, vel, accel, true, true);
+  CalcPVA<true,true>(gps_time, pos, vel, accel);
 }
 
-//TODO template<bool CalcVel, bool CalcAccel>
-void Ephemeris::PVA(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel,
-  Eigen::Vector3d& accel, bool calc_vel, bool calc_accel) const
-{
-  double A = std::pow(sqrtA,2.0);
+// //TODO template<bool CalcVel, bool CalcAccel>
+// void Ephemeris::PVA(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel,
+//   Eigen::Vector3d& accel, bool calc_vel, bool calc_accel) const
+// {
+//   double A = std::pow(sqrtA,2.0);
   
-  double n_0 = std::sqrt(WGS84_MU / std::pow(A,3.0));
-  double t_k = gps_time - t_oe;
-  if (t_k > 302400.0) {
-    t_k -= 604800.0;
-  } else if (t_k < -302400) {
-    t_k += 604800.0;
-  }
-  std::cout << "t_k: " << t_k << '\n';
+//   double n_0 = std::sqrt(WGS84_MU / std::pow(A,3.0));
+//   double t_k = gps_time - t_oe;
+//   if (t_k > 302400.0) {
+//     t_k -= 604800.0;
+//   } else if (t_k < -302400) {
+//     t_k += 604800.0;
+//   }
+//   // std::cout << "t_k: " << t_k << '\n';
   
-  double n = n_0 + del_n;
-  std::cout << "n: " << n << '\n';
-  double M_k = M_0 + (n * t_k);
-  M_k = std::fmod(M_k + TwoPi<double>, TwoPi<double>);
-  std::cout << "M: " << M_k << '\n';
+//   double n = n_0 + del_n;
+//   // std::cout << "n: " << n << '\n';
+//   double M_k = M_0 + (n * t_k);
+//   M_k = std::fmod(M_k + TwoPi<double>, TwoPi<double>);
+//   // std::cout << "M: " << M_k << '\n';
 
-  double E_k = EfromAnomaly(M_k,5);
-  E_k = std::fmod(E_k + TwoPi<double>, TwoPi<double>);
-  std::cout << "E_k: " << E_k << '\n';
+//   double E_k = EfromAnomaly(M_k,5);
+//   E_k = std::fmod(E_k + TwoPi<double>, TwoPi<double>);
+//   // std::cout << "E_k: " << E_k << '\n';
 
-  // double v_k = std::sqrt((1.0+e)/(1.0-e)) * std::tan(E_k / 2.0);
-  // v_k = 2.0 * std::atan(v_k);
-  double cv_k = (std::cos(E_k) - e) / (1.0 - (e * std::cos(E_k)));
-  double sv_k = (std::sqrt(1.0 - (e*e)) * std::sin(E_k)) / (1.0 - (e * std::cos(E_k)));
-  double v_k = std::atan2(sv_k,cv_k);
-  std::cout << "v_k: " << v_k << '\n';
+//   // double v_k = std::sqrt((1.0+e)/(1.0-e)) * std::tan(E_k / 2.0);
+//   // v_k = 2.0 * std::atan(v_k);
+//   double cv_k = (std::cos(E_k) - e) / (1.0 - (e * std::cos(E_k)));
+//   double sv_k = (std::sqrt(1.0 - (e*e)) * std::sin(E_k)) / (1.0 - (e * std::cos(E_k)));
+//   double v_k = std::atan2(sv_k,cv_k);
+//   // std::cout << "v_k: " << v_k << '\n';
 
-  double Phi_k = v_k + omega;
-  circular_fmod(Phi_k,TwoPi<double>);
-  std::cout << "Phi_k: " << Phi_k << '\n';
+//   double Phi_k = v_k + omega;
+//   circular_fmod(Phi_k,TwoPi<double>);
+//   // std::cout << "Phi_k: " << Phi_k << '\n';
 
-  double Phi2 = 2.0 * Phi_k;
-  double du_k = (C_us * std::sin(Phi2)) + (C_uc * std::cos(Phi2));
-  double dr_k = (C_rs * std::sin(Phi2)) + (C_rc * std::cos(Phi2));
-  double di_k = (C_is * std::sin(Phi2)) + (C_ic * std::cos(Phi2));
-  std::cout << "du_k: " << du_k << '\n';
-  std::cout << "dr_k: " << dr_k << '\n';
-  std::cout << "di_k: " << di_k << '\n';
+//   double Phi2 = 2.0 * Phi_k;
+//   double du_k = (C_us * std::sin(Phi2)) + (C_uc * std::cos(Phi2));
+//   double dr_k = (C_rs * std::sin(Phi2)) + (C_rc * std::cos(Phi2));
+//   double di_k = (C_is * std::sin(Phi2)) + (C_ic * std::cos(Phi2));
+//   // std::cout << "du_k: " << du_k << '\n';
+//   // std::cout << "dr_k: " << dr_k << '\n';
+//   // std::cout << "di_k: " << di_k << '\n';
   
-  double u_k = Phi_k + du_k;
-  double r_k = A * (1.0 - (e * std::cos(E_k))) + dr_k;
-  double i_k = i_0 + di_k + (IDOT * t_k);
-  std::cout << "u_k: " << u_k << '\n';
-  std::cout << "r_k: " << r_k << '\n';
-  std::cout << "i_k: " << i_k << '\n';
+//   double u_k = Phi_k + du_k;
+//   double r_k = A * (1.0 - (e * std::cos(E_k))) + dr_k;
+//   double i_k = i_0 + di_k + (IDOT * t_k);
+//   // std::cout << "u_k: " << u_k << '\n';
+//   // std::cout << "r_k: " << r_k << '\n';
+//   // std::cout << "i_k: " << i_k << '\n';
 
-  double x_orb = r_k * std::cos(u_k);
-  double y_orb = r_k * std::sin(u_k);
+//   double x_orb = r_k * std::cos(u_k);
+//   double y_orb = r_k * std::sin(u_k);
 
-  double Omega_k = Omega_0 + ((Omega_dot - WGS84_EARTH_RATE) * t_k) - (WGS84_EARTH_RATE * t_oe);
-  circular_fmod(Omega_k, TwoPi<double>);
-  std::cout << "Omega_k: " << Omega_k << '\n';
+//   double Omega_k = Omega_0 + ((Omega_dot - WGS84_EARTH_RATE) * t_k) - (WGS84_EARTH_RATE * t_oe);
+//   circular_fmod(Omega_k, TwoPi<double>);
+//   // std::cout << "Omega_k: " << Omega_k << '\n';
 
-  pos(0) = (x_orb * std::cos(Omega_k)) - (y_orb * std::cos(i_k) * std::sin(Omega_k));
-  pos(1) = (x_orb * std::sin(Omega_k)) + (y_orb * std::cos(i_k) * std::cos(Omega_k));
-  pos(2) = y_orb * std::sin(i_k);
+//   pos(0) = (x_orb * std::cos(Omega_k)) - (y_orb * std::cos(i_k) * std::sin(Omega_k));
+//   pos(1) = (x_orb * std::sin(Omega_k)) + (y_orb * std::cos(i_k) * std::cos(Omega_k));
+//   pos(2) = y_orb * std::sin(i_k);
 
-  // Velocity Terms
-  if (calc_vel) {
-    double Ed_k = n / (1.0 - (e * std::cos(E_k)));
-    double vd_k = Ed_k * std::sqrt(1.0 - (e*e)) / (1.0 - (e * std::cos(E_k)));
-    double id_k = IDOT + ( 2.0 * vd_k * ((C_is * std::cos(Phi2)) - (C_ic * std::sin(Phi2))) );
-    double ud_k = vd_k + ( 2.0 * vd_k * ((C_us * std::cos(Phi2)) - (C_uc * std::sin(Phi2))) );
-    double rd_k = (e * A * Ed_k * std::sin(E_k))
-                  + ( 2.0 * vd_k * ((C_rs * std::cos(Phi2)) - (C_rc * std::sin(Phi2))) );
-    double Omega_dot_k = Omega_dot - WGS84_EARTH_RATE;
+//   // Velocity Terms
+//   if (calc_vel) {
+//     double Ed_k = n / (1.0 - (e * std::cos(E_k)));
+//     double vd_k = Ed_k * std::sqrt(1.0 - (e*e)) / (1.0 - (e * std::cos(E_k)));
+//     double id_k = IDOT + ( 2.0 * vd_k * ((C_is * std::cos(Phi2)) - (C_ic * std::sin(Phi2))) );
+//     double ud_k = vd_k + ( 2.0 * vd_k * ((C_us * std::cos(Phi2)) - (C_uc * std::sin(Phi2))) );
+//     double rd_k = (e * A * Ed_k * std::sin(E_k))
+//                   + ( 2.0 * vd_k * ((C_rs * std::cos(Phi2)) - (C_rc * std::sin(Phi2))) );
+//     double Omega_dot_k = Omega_dot - WGS84_EARTH_RATE;
     
-    double xd_orb = (rd_k * std::cos(u_k)) - (r_k * ud_k * std::sin(u_k));
-    double yd_orb = (rd_k * std::sin(u_k)) + (r_k * ud_k * std::cos(u_k));
+//     double xd_orb = (rd_k * std::cos(u_k)) - (r_k * ud_k * std::sin(u_k));
+//     double yd_orb = (rd_k * std::sin(u_k)) + (r_k * ud_k * std::cos(u_k));
     
-    vel(0) = (-x_orb * Omega_dot_k * std::sin(Omega_k))
-            + (xd_orb * std::cos(Omega_k))
-            - (yd_orb * std::sin(Omega_k) * std::cos(i_k))
-            - ( y_orb * ((Omega_dot_k * std::cos(Omega_k) * std::cos(i_k)) 
-                      - (id_k * std::sin(Omega_k * std::sin(i_k)))) ); 
+//     vel(0) = (-x_orb * Omega_dot_k * std::sin(Omega_k))
+//             + (xd_orb * std::cos(Omega_k))
+//             - (yd_orb * std::sin(Omega_k) * std::cos(i_k))
+//             - ( y_orb * ((Omega_dot_k * std::cos(Omega_k) * std::cos(i_k)) 
+//                       - (id_k * std::sin(Omega_k * std::sin(i_k)))) ); 
   
-    vel(1) = (x_orb * Omega_dot_k * std::cos(Omega_k))
-            + (xd_orb * std::sin(Omega_k))
-            + (yd_orb * std::cos(Omega_k) * std::cos(i_k))
-            - ( y_orb * ((Omega_dot_k * std::sin(Omega_k) * std::cos(i_k)) 
-                      + (id_k * std::cos(Omega_k) * std::sin(i_k))) ); 
+//     vel(1) = (x_orb * Omega_dot_k * std::cos(Omega_k))
+//             + (xd_orb * std::sin(Omega_k))
+//             + (yd_orb * std::cos(Omega_k) * std::cos(i_k))
+//             - ( y_orb * ((Omega_dot_k * std::sin(Omega_k) * std::cos(i_k)) 
+//                       + (id_k * std::cos(Omega_k) * std::sin(i_k))) ); 
   
-    vel(2) = (yd_orb * std::sin(i_k)) + (y_orb * id_k * std::cos(i_k));
+//     vel(2) = (yd_orb * std::sin(i_k)) + (y_orb * id_k * std::cos(i_k));
     
-    // Acceleration Terms
-    if (calc_accel) {  
-      double r2 = r_k * r_k;
-      double r3 = r2 * r_k;
-      double F = -1.5 * J2 * (WGS84_MU / r2) * std::pow(WGS84_EQUAT_RADIUS / r_k, 2.0);
-      double F_term = F * ( 1.0 - (5.0 * std::pow(pos(2) / r_k, 2.0)) );  
-      double omega_e2 = std::pow(WGS84_EARTH_RATE, 2.0);
+//   }
+
+//   // Acceleration Terms
+//   if (calc_accel) {  
+//     double r2 = r_k * r_k;
+//     double r3 = r2 * r_k;
+//     double F = -1.5 * J2 * (WGS84_MU / r2) * std::pow(WGS84_EQUAT_RADIUS / r_k, 2.0);
+//     double F_term = F * ( 1.0 - (5.0 * std::pow(pos(2) / r_k, 2.0)) );  
+//     double omega_e2 = std::pow(WGS84_EARTH_RATE, 2.0);
+
+//     accel(0) = (-WGS84_MU * pos(0) / r3) + (F_term * pos(0) / r_k)
+//               + (2.0 * vel(1) * WGS84_EARTH_RATE) + (pos(0) * omega_e2);
   
-      accel(0) = (-WGS84_MU * pos(0) / r3) + (F_term * pos(0) / r_k)
-                + (2.0 * vel(1) * WGS84_EARTH_RATE) + (pos(0) * omega_e2);
-    
-      accel(1) = (-WGS84_MU * pos(1) / r3) + (F_term * pos(1) / r_k)
-                - (2.0 * vel(0) * WGS84_EARTH_RATE) + (pos(1) * omega_e2);
-    
-      accel(2) = (-WGS84_MU * pos(2) / r3)
-                + ( F * (3.0 - (5.0 * std::pow(pos(2) / r_k, 2.0))) * pos(2) / r_k );  
-    }
-  } 
-}
+//     accel(1) = (-WGS84_MU * pos(1) / r3) + (F_term * pos(1) / r_k)
+//               - (2.0 * vel(0) * WGS84_EARTH_RATE) + (pos(1) * omega_e2);
+  
+//     accel(2) = (-WGS84_MU * pos(2) / r3)
+//               + ( F * (3.0 - (5.0 * std::pow(pos(2) / r_k, 2.0))) * pos(2) / r_k );  
+//   }
+// }
 
 
 double Ephemeris::RelTime(const double gps_time) const

@@ -21,6 +21,14 @@ constexpr uint8_t parity_array_29 [15] = {0,2,4,5,6, 8, 9,13,14,15,16,17,20,21,2
 constexpr uint8_t parity_array_30 [13] = {2,4,5,7,8, 9,10,12,14,18,21,22,23};
 
 
+/*
+Overhaul:
+  -change operator[0] to give MSB of bits_ (well, the 2^29 spot anyways)
+    similarly, change Bit(const pos) const
+  -change Set functions and SetVal function
+  
+*/
+
 class Word
 {
 private:
@@ -30,19 +38,19 @@ public:
   Word() {}
   Word(uint32_t bits) : bits_{bits} {}
   ~Word() {}
-  
+
   // Convenient Operators
   Word& operator=(const Word other) { this->bits_ = other.bits_; return *this; }
   Word& operator=(const uint32_t bits) { bits_ = bits; return *this; }
   
   // Reading Data (cannot write with these)
-  bool operator[](const uint8_t pos) const { return bitVal(bits_, pos); }
-  bool Bit(const uint8_t pos) const { return bitVal(bits_, pos); }
+  bool operator[](const uint8_t pos) const { return bitVal<false>(bits_, pos); }
+  bool Bit(const uint8_t pos) const { return bitVal<false>(bits_, pos); }
 
   // Changing Bits
-  void Set(uint8_t pos) { bitSet(bits_, pos); }
-  void Set(uint8_t pos, bool val) { bitEqu(bits_,pos, val); }
-  void Set(uint8_t pos, uint32_t val, uint8_t valpos) { bitEqu(bits_, pos, bitVal(val, valpos)); }
+  void Set(uint8_t pos) { bitSet<false>(bits_, pos); }
+  void Set(uint8_t pos, bool val) { bitEqu<false>(bits_,pos, val); }
+  // void Set(uint8_t pos, uint32_t val, uint8_t valpos) { bitEqu<false>(bits_, pos, bitVal<false>(val, valpos)); }
   void SetVal(uint32_t val) { bits_=val; }
   void SegmentSet(uint8_t loc, const uint32_t& val, uint8_t start, uint8_t end);
   void SegmentSet(uint8_t loc, const uint32_t& val, uint8_t end);
@@ -50,10 +58,46 @@ public:
   // void Parity(bool D29, bool D30);
   Word Parity(bool D29, bool D30) const;
 
+  uint32_t Val(const uint8_t start, const uint8_t end) const;
   uint32_t Val() const { return bits_; }
   void Reset() { bits_ = 0; }
   void Print() const; // prints MSB to LSB of message
 };
+
+//! Previous version, keeping here for now just in case
+// class Word
+// {
+// private:
+//   uint32_t bits_ {0};
+
+// public:
+//   Word() {}
+//   Word(uint32_t bits) : bits_{bits} {}
+//   ~Word() {}
+
+//   // Convenient Operators
+//   Word& operator=(const Word other) { this->bits_ = other.bits_; return *this; }
+//   Word& operator=(const uint32_t bits) { bits_ = bits; return *this; }
+  
+//   // Reading Data (cannot write with these)
+//   bool operator[](const uint8_t pos) const { return bitVal(bits_, pos); }
+//   bool Bit(const uint8_t pos) const { return bitVal(bits_, pos); }
+
+//   // Changing Bits
+//   void Set(uint8_t pos) { bitSet(bits_, pos); }
+//   void Set(uint8_t pos, bool val) { bitEqu(bits_,pos, val); }
+//   void Set(uint8_t pos, uint32_t val, uint8_t valpos) { bitEqu(bits_, pos, bitVal(val, valpos)); }
+//   void SetVal(uint32_t val) { bits_=val; }
+//   void SegmentSet(uint8_t loc, const uint32_t& val, uint8_t start, uint8_t end);
+//   void SegmentSet(uint8_t loc, const uint32_t& val, uint8_t end);
+
+//   // void Parity(bool D29, bool D30);
+//   Word Parity(bool D29, bool D30) const;
+
+//   uint32_t Val() const { return bits_; }
+//   void Reset() { bits_ = 0; }
+//   void Print() const; // prints MSB to LSB of message
+// };
 
 
 void TLM(Word& word, const uint16_t tlm_message, const bool integrity_status_flag);
@@ -95,6 +139,7 @@ public:
   void TimeIncrement(); // increases the time by one subframe
   Subframe ParityFrame(uint8_t sf); // not const because D29 and D30 are modified
 
+  // Updating subframe bits
   void SetSubframe(uint8_t sf_i); // zero-indexed
   void SetSubframes();
   void SetSubframe1();
@@ -105,6 +150,15 @@ public:
 
   void SetTOW(uint32_t tow) { tow_ = tow; }
   void SetWeek(uint16_t week) { week_ = week; }
+
+  // Loading data that has already been parity-wiped
+  void LoadSubframe(uint8_t sf_i, Subframe& sf);
+  void LoadPreamble(uint8_t sf_i, Subframe& sf);
+  void LoadSubframe1(Subframe& sf);
+  void LoadSubframe2(Subframe& sf);
+  void LoadSubframe3(Subframe& sf);
+  void LoadSubframe4(Subframe& sf);
+  void LoadSubframe5(Subframe& sf);
 
   // Setting other data
   void SetIntegrityFlag(const bool val) { integrity_status_flag_ = val; }
@@ -153,6 +207,9 @@ private:
   
   ClockData clock_data_;
   Ephemeris ephemeris_;
+
+  uint16_t tlm_message_ {0};
+
   uint32_t tow_; // beginning of next subframe
   uint16_t week_; // 10 bits
 
@@ -164,6 +221,7 @@ private:
   uint8_t URA_ {0};
   uint8_t health_ {0};
 
+  bool l2p_flag_ {false};
   bool fit_interval_flag_ {true};
   uint8_t AODO_ {0};
 

@@ -37,6 +37,9 @@ const double L5_CODE_RATE = 10.23e6;
 const double DATA_BIT_RATE = 50.0;
 const double DATA_BIT_PERIOD = 0.02;
 
+const double CHIPS_PER_METER = CA_RATE / LIGHT_SPEED;
+const double L1_RADIANS_PER_METER = L1_ANGULAR_FREQUENCY / LIGHT_SPEED;
+
 
 void GenCA(std::array<bool,1023>* const sequence, const uint8_t prn);
 

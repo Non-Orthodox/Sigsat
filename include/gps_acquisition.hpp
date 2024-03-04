@@ -1,0 +1,10 @@
+#ifndef SATELLITE_CONSTELLATIONS_INCLUDE_GPS_ACQUISITION
+#define SATELLITE_CONSTELLATIONS_INCLUDE_GPS_ACQUISITION
+
+#include <fftw3.h>
+
+#include "gps_common.hpp"
+
+
+
+#endif

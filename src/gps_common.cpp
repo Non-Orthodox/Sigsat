@@ -18,7 +18,7 @@ void GenCA(std::array<bool,1023>* const sequence, const uint8_t prn)
 {
   assert( !((prn < 1) || (prn > 32)) );
 
-  uint8_t g2_out_taps [32][2] = {
+  static constexpr uint8_t g2_out_taps [32][2] = {
     /*01*/{2,6},
     /*02*/{3,7},
     /*03*/{4,8},
@@ -62,15 +62,17 @@ void GenCA(std::array<bool,1023>* const sequence, const uint8_t prn)
 
   for (std::size_t i = 0; i < 1023; i++) {
     // set value in sequence
-    sequence->operator[](i) = bitVal(G1,9) ^ bitVal(G2,g2_out_taps[prn-1][0]-1) ^ bitVal(G2,g2_out_taps[prn-1][1]-1);
+    sequence->operator[](i) = bitVal<true>(G1,9) 
+                            ^ bitVal<true>(G2,g2_out_taps[prn-1][0]-1)
+                            ^ bitVal<true>(G2,g2_out_taps[prn-1][1]-1);
 
     // shift the registers and set first bits
-    bool feedback1 = multiXOR<2>(G1,taps1);
-    bool feedback2 = multiXOR<6>(G2,taps2);
+    bool feedback1 = multiXOR<2,true>(G1,taps1);
+    bool feedback2 = multiXOR<6,true>(G2,taps2);
     G1 <<= 1;
     G2 <<= 1;
-    bitEqu(G1,0,feedback1);
-    bitEqu(G2,0,feedback2);
+    bitEqu<true>(G1,0,feedback1);
+    bitEqu<true>(G2,0,feedback2);
   }
 }
 

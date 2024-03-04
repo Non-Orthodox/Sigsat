@@ -21,22 +21,10 @@ bool bitVal(const IntType& num, const uint8_t pos)
   return (num >> pos) & 1;
 }
 
-bool bitVal(const uint32_t& num, const uint8_t pos)
-{
-  assert(!(pos > 31));
-  return (num >> pos) & 1;
-}
-
 template<typename IntType>
 void bitSet(IntType& num, const uint8_t pos)
 {
   assert(!(pos > (sizeof(IntType)*8-1)));
-  num |= 1 << pos;
-}
-
-void bitSet(uint32_t& num, const uint8_t pos)
-{
-  assert(!(pos > 31));
   num |= 1 << pos;
 }
 
@@ -64,18 +52,6 @@ void bitToggle(uint32_t& num, const uint8_t pos)
 {
   assert(!(pos > 31));
   num ^= 1 << pos;
-}
-
-void bitEqu(uint16_t& num, const uint8_t pos, bool val)
-{
-  assert(!(pos > 15));
-  num ^= (-(uint16_t)val ^ num) & (1 << pos);
-}
-
-void bitEqu(uint32_t& num, const uint8_t pos, bool val)
-{
-  assert(!(pos > 31));
-  num ^= (-(uint32_t)val ^ num) & (1 << pos);
 }
 
 void printBinary(const uint8_t num)

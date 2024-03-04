@@ -6,7 +6,6 @@
 #include <complex>
 #include <numbers>
 
-// extern std::random_device RANDOM_GENERATOR;
 
 template<class T>
 concept BracketContainer = requires (T t, std::size_t index) {
@@ -21,12 +20,19 @@ template<typename T>
 inline constexpr std::complex<T> ComplexI = {0.,1.};
 
 template<typename RealType>
-void circular_fmod(RealType& x, RealType y)
+void circular_fmod(RealType& x, const RealType y)
 {
   assert(y > 0.);
   RealType mult = std::floor(x / y);
   x -= mult * y;
 }
 
+template<typename RealType>
+RealType circular_fmod2(const RealType x, const RealType y)
+{
+  RealType result = x;
+  circular_fmod(result, y);
+  return result;
+}
 
 #endif
