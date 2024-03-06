@@ -228,6 +228,12 @@ private:
   uint8_t page_ {1};
   bool D29_ {false};
   bool D30_ {false};
+
+  // Reserved bits
+  uint32_t sf1w4_reserved_ {0xAAAAAAAA}; // alternating ones and zeros
+  uint32_t sf1w5_reserved_ {0xAAAAAAAA};
+  uint32_t sf1w6_reserved_ {0xAAAAAAAA};
+  uint16_t sf1w7_reserved_ {0xAAAA};
 };
 
 } // namespace Lnav

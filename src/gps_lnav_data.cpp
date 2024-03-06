@@ -253,7 +253,11 @@ void DataFrame::SetSubframe1()
   subframes_[0][2].SegmentSet(16, health_, 0, 5);
   subframes_[0][2].SegmentSet(22, clock_data_.IODC, 8, 9);
   
-  // Words 4,5,6 are reserved
+  // Reserved bits
+  subframes_[0][3].SegmentSet(1, sf1w4_reserved_, 0, 22);
+  subframes_[0][4].SegmentSet(0, sf1w5_reserved_, 0, 23);
+  subframes_[0][5].SegmentSet(0, sf1w6_reserved_, 0, 23);
+  subframes_[0][6].SegmentSet(0, sf1w7_reserved_, 0, 15);
 
   subframes_[0][6].SegmentSet(16, T_GD(), 0, 7);
 
@@ -423,6 +427,7 @@ void DataFrame::LoadPreamble(uint8_t sf_i, Subframe& sf)
 
   integrity_status_flag_ = sf[0].Bit(22);
   tow_ = (sf[1].Val(0,16) << 2) - (sf_i * 4);
+  // std::cout << "recorded tow: " << tow_ << '\n';
   std::cout << "tow: " << (sf[1].Val(0,16) << 2) << '\n';
 
   alert_flag_ = sf[1].Bit(17);
@@ -453,6 +458,12 @@ void DataFrame::LoadSubframe1(Subframe& sf)
 
   l2p_flag_ = sf[3].Bit(0);
   std::cout << "L2P flag: " << l2p_flag_ << '\n';
+
+  // Reserved bits
+  sf1w4_reserved_ = sf[3].Val(1,23);
+  sf1w5_reserved_ = sf[4].Val(0,23);
+  sf1w6_reserved_ = sf[5].Val(0,23);
+  sf1w7_reserved_ = sf[6].Val(0,15);
 
   clock_data_.T_GD = ParamFromBinary(sf[6].Val(16,23), ClockDataScaleFactors.T_GD, 8, true);
   std::cout << "T_GD: " << clock_data_.T_GD << '\n';
